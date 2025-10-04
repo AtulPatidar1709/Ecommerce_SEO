@@ -85,11 +85,11 @@ backend/
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/AtulPatidar1709/TourTrove.git
+   git clone https://github.com/AtulPatidar1709/Ecommerce_SEO.git
 
 2. **Clone the repository**:
    ```bash
-   cd vision-space
+   cd Ecommerce_SEO/Server
 
 3. **install all dependency**:
    ```bash
