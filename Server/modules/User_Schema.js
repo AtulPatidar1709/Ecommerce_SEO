@@ -7,7 +7,7 @@ const AddressSchema = new mongoose.Schema({
   state: { type: String, required: true },
   country: { type: String, required: true },
   zip: { type: String, required: true },
-  phone: { type: String },             // optional, if different from user phone
+  phone: { type: String },
 });
 
 const UserSchema = new mongoose.Schema({
@@ -18,6 +18,7 @@ const UserSchema = new mongoose.Schema({
   points: { type: Number, default: 0 },
   rewards: [{ type: String }],
   addresses: [AddressSchema], 
+  role: { type: String, enum: ["user", "admin"], default: "user" },
 });
 
 

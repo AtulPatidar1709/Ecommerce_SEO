@@ -1,16 +1,45 @@
+import axios from 'axios';
 import Product from '../modules/Product.js';
 import Event from '../modules/Event.js';
 
+const AI_SERVICE_BASE = 'http://localhost:5000'; // Flask service URL
+
 /**
- * Get personalized product recommendations for a user
- * @param {Object} params
- * @param {string} params.userId
- * @param {number} [params.limit=10]
- * @param {object} params.redisClient
+ * Get AI content-based recommendations for a product
+ * @param {string} productId
  * @returns {Promise<Array>} Recommended products
  */
+export async function getAIRecommendations(productId) {
+  try {
+    const { data } = await axios.get(`${AI_SERVICE_BASE}/recommend/${productId}`);
+    const aiRecs = data.recommendations || [];
+
+    if (aiRecs.length === 0) return [];
+
+    // Extract the product IDs from Flask response
+    const ids = aiRecs.map((r) => r.id);
+
+    // Fetch actual product documents from MongoDB
+    const products = await Product.find({ _id: { $in: ids } }).lean();
+
+    // Optional: Attach AI similarity scores to each product for debugging
+    return products.map((p) => {
+      const rec = aiRecs.find((r) => r.id === String(p._id));
+      return { ...p, aiScore: rec?.score || 0 };
+    });
+  } catch (err) {
+    console.error('AI Recommender error:', err.message);
+    return [];
+  }
+}
+
+/**
+ * Get personalized product recommendations for a user
+ * (based on tags, categories & popularity)
+ */
+
 export async function getRecommendations({ userId, limit = 10, redisClient }) {
-  // 1️⃣ Get recent events from Redis
+  // Get recent events from Redis
   let recent = [];
   try {
     const data = await redisClient.lRange(`recent:${userId}`, 0, -1);
@@ -19,20 +48,28 @@ export async function getRecommendations({ userId, limit = 10, redisClient }) {
     console.log('Redis read error', err);
   }
 
-  // 2️⃣ Fallback to Mongo if Redis is empty
+  // Fallback to Mongo if Redis is empty
   if (recent.length === 0) {
     recent = await Event.find({ userId }).sort({ timestamp: -1 }).limit(30);
   }
 
-  // 3️⃣ Extract viewed product IDs
+  // Extract viewed product IDs
   const viewedIds = recent
     .filter((r) => r.productId)
     .map((r) => r.productId);
 
-  // 4️⃣ Load products to get tags/categories
+  if (viewedIds.length === 0) {
+    // No history → recommend popular products
+    return Product.find({})
+      .sort({ popularity: -1 })
+      .limit(limit)
+      .lean();
+  }
+
+  // Load products to get tags/categories
   const viewedProducts = await Product.find({ _id: { $in: viewedIds } });
 
-  // 5️⃣ Build tag/category profile
+  // Build tag/category profile
   const tagCounts = {};
   const categoryCounts = {};
 
@@ -46,7 +83,7 @@ export async function getRecommendations({ userId, limit = 10, redisClient }) {
   const tagSet = Object.keys(tagCounts);
   const catSet = Object.keys(categoryCounts);
 
-  // 6️⃣ Find candidate products
+  // Find candidate products
   let candidates = await Product.find({
     _id: { $nin: viewedIds },
     $or: [
@@ -55,7 +92,7 @@ export async function getRecommendations({ userId, limit = 10, redisClient }) {
     ],
   });
 
-  // 7️⃣ Fallback to popular products if not enough
+  // Fallback to popular products if not enough
   if (candidates.length < limit) {
     const extra = await Product.find({
       _id: { $nin: [...viewedIds, ...candidates.map((p) => p._id)] },
@@ -66,7 +103,7 @@ export async function getRecommendations({ userId, limit = 10, redisClient }) {
     candidates = candidates.concat(extra);
   }
 
-  // 8️⃣ Scoring
+  // Scoring
   const scored = candidates.map((p) => {
     let score = 0;
     p.tags.forEach((tag) => {
@@ -77,7 +114,7 @@ export async function getRecommendations({ userId, limit = 10, redisClient }) {
     return { ...p.toObject(), score };
   });
 
-  // 9️⃣ Sort & return top
+  // Sort & return top
   scored.sort((a, b) => b.score - a.score);
   return scored.slice(0, limit);
 }

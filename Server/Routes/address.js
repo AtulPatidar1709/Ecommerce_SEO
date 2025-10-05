@@ -1,5 +1,5 @@
 import express from "express";
-import User from "../models/User.js";
+import User from "../modules/User_Schema.js";
 import validate from "../middleware/validate.js";
 import addressSchema from "../validations/addressValidation.js";
 
@@ -22,7 +22,6 @@ addressRoutes.post("/:userId", validate(addressSchema), async (req, res) => {
   res.json({ ok: true, addresses: user.addresses });
 });
 
-// Update address by index or ID
 addressRoutes.put("/:userId/:addressId", validate(addressSchema), async (req, res) => {
   const user = await User.findById(req.params.userId);
   if (!user) return res.status(404).json({ error: "User not found" });

@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 import Product from '../modules/Product.js';
 import Pair from '../modules/Pair.js';

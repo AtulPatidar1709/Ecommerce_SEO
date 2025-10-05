@@ -1,4 +1,5 @@
 import User from "../modules/User_Schema.js";
+
 /**
  * Awards loyalty points to a user based on their purchase total.
  * Example: 1 point per $10 spent.
@@ -7,6 +8,7 @@ import User from "../modules/User_Schema.js";
  * @param {Number} totalAmount - The total purchase amount
  * @returns {Promise<void>}
  */
+
 export async function awardPoints(userId, totalAmount) {
   // Define your points logic
   const pointsPerDollar = 0.1; // 1 point per $10

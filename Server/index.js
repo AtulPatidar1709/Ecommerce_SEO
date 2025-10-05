@@ -1,4 +1,5 @@
 import express from "express";
+
 import userRouter from "./Routes/userRoutes.js";
 import productRouter from "./Routes/productRoutes.js";
 import eventRoutes from "./Routes/events.js";
@@ -7,6 +8,7 @@ import PairRoutes from "./Routes/pairs.js";
 import cartRoutes from "./Routes/cartRoutes.js";
 import categoryRoutes from "./Routes/categoryRoutes.js";
 import addressRoutes from "./Routes/address.js";
+import { authenticateUser } from "./middleware/authMiddleware.js";
 
 const app = express();
 
@@ -23,20 +25,25 @@ app.use("/api/user" , userRouter);
 app.use("/api/product" , productRouter);
 
 //Event Interest Section
-app.use('/api/events', eventRoutes);
+app.use('/api/events', authenticateUser, eventRoutes);
 
-app.use('/api/pairs', PairRoutes);
+//Pair Interest Section
+app.use('/api/pairs', authenticateUser, PairRoutes);
 
-app.use('/api/cart', cartRoutes);
+//Cart Section
+app.use('/api/cart',authenticateUser, cartRoutes);
 
+//Categories Section
 app.use("/api/categories", categoryRoutes);
 
 //Recommendation Section
 // app.use('/api/spin', spinRoute);
 
-app.use("/api/addresses", addressRoutes); 
+//User Addresses Section
+app.use("/api/addresses", authenticateUser, addressRoutes); 
 
-app.use('/api/recommendations', RecommendationRouter);
+//Recommended Products Based on User Search and User Interest
+app.use('/api/recommendations', authenticateUser, RecommendationRouter);
 
 app.listen(8080, (req,res) => {
     console.log("Hello World")

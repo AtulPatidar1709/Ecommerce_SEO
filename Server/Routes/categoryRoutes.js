@@ -1,5 +1,5 @@
 import express from "express";
-import Category from "../models/Category.js";
+import Category from "../modules/Category.js";
 import { categoryValidationSchema } from "../validations/categoryValidation.js";
 import validate from "../middleware/validate.js";
 const categoryRoutes = express.Router();

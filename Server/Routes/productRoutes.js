@@ -3,6 +3,7 @@ import validate from "../middleware/validate.js";
 import Product from "../modules/Product.js";
 import Category from "../modules/Category.js";
 import { productValidationSchema } from "../validations/productValidation.js";
+import { authenticateUser, authorizeAdmin } from "../middleware/authMiddleware.js";
 
 const productRouter = Router();
 
@@ -20,7 +21,7 @@ productRouter.get("/", async (req, res) => {
 });
 
 // Create product with category auto-handling
-productRouter.post("/add", validate(productValidationSchema), async (req, res) => {
+productRouter.post("/add", authenticateUser, authorizeAdmin, validate(productValidationSchema), async (req, res) => {
   try {
     const { title, price, images, category } = req.body;
 
@@ -64,7 +65,7 @@ productRouter.get("/:id", async (req, res) => {
 });
 
 // Update Product by ID
-productRouter.put("/:id", async (req, res) => {
+productRouter.put("/:id", authenticateUser, authorizeAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { title, price, images, category } = req.body;
@@ -103,8 +104,8 @@ productRouter.put("/:id", async (req, res) => {
   }
 });
 
-// ✅ Delete Product by ID
-productRouter.delete("/:id", async (req, res) => {
+// Delete Product by ID
+productRouter.delete("/:id", authenticateUser, authorizeAdmin, async (req, res) => {
   try {
     const { id } = req.params;
 
